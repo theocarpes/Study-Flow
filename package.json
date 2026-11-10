@@ -4,6 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.17",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native-stack": "^7.21.0",
     "expo": "~57.0.31",
     "expo-status-bar": "~57.0.1",

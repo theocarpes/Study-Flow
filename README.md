@@ -103,8 +103,9 @@ O aplicativo consulta as atividades globais e as atividades criadas pela pessoa 
    ```
 
 2. Copie `firebase.example.js` para `firebase.js` e substitua os valores de exemplo pelos dados de configuração do app Web no Firebase Console. O arquivo `firebase.js` está no `.gitignore` e não deve ser enviado ao repositório.
-3. No Firebase Console, habilite o provedor **E-mail/senha** no Authentication, crie o banco Cloud Firestore e publique regras compatíveis com os campos e coleções descritos neste README.
-4. Inicie o Expo:
+3. No Firebase Console, habilite o provedor **E-mail/senha** no Authentication e crie o banco Cloud Firestore.
+4. Publique as regras deste projeto. Com o Firebase CLI instalado e selecionado o projeto correto, execute `firebase deploy --only firestore:rules --project SEU_PROJECT_ID` dentro da pasta `studyflow`.
+5. Inicie o Expo:
 
    ```bash
    npm start
@@ -116,3 +117,11 @@ O aplicativo consulta as atividades globais e as atividades criadas pela pessoa 
 - Expo
 - Firebase Authentication
 - Cloud Firestore
+
+## Autenticação e permissões no Firebase
+
+O Firebase Authentication valida a senha e armazena a credencial com hash no serviço; o app nunca grava a senha nos documentos do Firestore. Depois do login, o Firebase cria o ID token JWT. O SDK mantém a sessão usando AsyncStorage no app nativo, renova o token quando necessário e autentica as chamadas feitas pelo SDK do Firestore. O app não salva o token por conta própria nem monta manualmente um cabeçalho `Authorization: Bearer`; o Firebase aplica essa autenticação nas chamadas ao Firestore.
+
+As regras em `firestore.rules` validam a identidade (`request.auth.uid`) e as permissões no Firestore: novas contas só podem ser criadas como estudantes, apenas professores podem publicar atividades globais, cada pessoa altera ou exclui as próprias atividades, e cada usuário lê e grava somente os próprios resultados. A promoção para professor deve ser feita por uma pessoa administradora no Console do Firebase. Depois de alterar o papel, o usuário deve entrar novamente para atualizar o perfil carregado pelo app.
+
+As telas principais só aparecem com uma sessão autenticada. Para este app, que acessa o Firestore diretamente, as regras do Firestore fazem a proteção no back-end. Se uma futura API própria for adicionada, ela deverá receber o ID token no cabeçalho `Authorization: Bearer <idToken>` e validá-lo com o Firebase Admin SDK.

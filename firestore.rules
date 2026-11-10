@@ -1,0 +1,144 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function conectado() {
+      return request.auth != null;
+    }
+
+    function eProfessor() {
+      return conectado()
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+             .data.tipo == 'professor';
+    }
+
+    function atividadeValida(dados) {
+      return dados.keys().hasAll([
+          'titulo', 'materia', 'data', 'visibilidade', 'criadoPor'
+        ])
+        && dados.keys().hasOnly([
+          'titulo', 'materia', 'data', 'visibilidade',
+          'criadoPor', 'descricao', 'horario'
+        ])
+        && dados.titulo is string
+        && dados.materia is string
+        && dados.data is string
+        && dados.visibilidade in ['global', 'privada']
+        && dados.criadoPor is string
+        && dados.get('descricao', '') is string
+        && dados.get('horario', '') is string;
+    }
+
+    function resultadoValido(dados) {
+      return dados.keys().hasOnly(['concluida', 'nota'])
+        && dados.keys().hasAny(['concluida', 'nota'])
+        && dados.get('concluida', false) is bool
+        && (
+          dados.get('nota', null) == null
+          || (
+            dados.get('nota', null) is number
+            && dados.get('nota', null) >= 0
+            && dados.get('nota', null) <= 10
+          )
+        );
+    }
+
+    match /usuarios/{uid} {
+      // Cada usuário pode ler somente o próprio perfil.
+      allow read: if conectado() && request.auth.uid == uid;
+
+      // Cadastros feitos pelo app começam como estudantes.
+      allow create: if conectado()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasAll(['nome', 'email', 'tipo'])
+        && request.resource.data.keys().hasOnly(['nome', 'email', 'tipo'])
+        && request.resource.data.nome is string
+        && request.resource.data.email is string
+        && request.resource.data.tipo == 'estudante';
+
+      // O usuário pode editar nome e e-mail, mas não seu tipo de conta.
+      allow update: if conectado()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data)
+             .affectedKeys().hasOnly(['nome', 'email'])
+        && request.resource.data.nome is string
+        && request.resource.data.email is string;
+
+      allow delete: if false;
+
+      match /resultados/{atividadeId} {
+        // Cada usuário acessa somente suas próprias notas e conclusões.
+        allow read: if conectado() && request.auth.uid == uid;
+
+        allow create, update: if conectado()
+          && request.auth.uid == uid
+          && resultadoValido(request.resource.data);
+
+        allow delete: if conectado() && request.auth.uid == uid;
+      }
+    }
+
+    match /atividades/{atividadeId} {
+      // Atividades globais são visíveis para usuários conectados.
+      // Atividades privadas só são visíveis para quem as criou.
+      allow read: if conectado()
+        && (
+          resource.data.visibilidade == 'global'
+          || resource.data.criadoPor == request.auth.uid
+        );
+
+      // Qualquer usuário pode criar atividade privada;
+      // somente professor pode criar atividade global.
+      allow create: if conectado()
+        && atividadeValida(request.resource.data)
+        && request.resource.data.criadoPor == request.auth.uid
+        && (
+          request.resource.data.visibilidade == 'privada'
+          || (
+            request.resource.data.visibilidade == 'global'
+            && eProfessor()
+          )
+        );
+
+      // Estudante edita a própria atividade privada.
+      // Professor edita a própria atividade global.
+      allow update: if conectado()
+        && atividadeValida(request.resource.data)
+        && request.resource.data.criadoPor == resource.data.criadoPor
+        && (
+          (
+            resource.data.visibilidade == 'privada'
+            && resource.data.criadoPor == request.auth.uid
+            && request.resource.data.visibilidade == 'privada'
+          )
+          || (
+            resource.data.visibilidade == 'global'
+            && resource.data.criadoPor == request.auth.uid
+            && eProfessor()
+            && request.resource.data.visibilidade == 'global'
+          )
+        );
+
+      // Cada pessoa exclui sua atividade privada;
+      // professor exclui somente a atividade global que publicou.
+      allow delete: if conectado()
+        && (
+          (
+            resource.data.visibilidade == 'privada'
+            && resource.data.criadoPor == request.auth.uid
+          )
+          || (
+            resource.data.visibilidade == 'global'
+            && resource.data.criadoPor == request.auth.uid
+            && eProfessor()
+          )
+        );
+    }
+
+    // Nega acesso a coleções não definidas acima.
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}

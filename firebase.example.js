@@ -1,6 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, getReactNativePersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Copie este arquivo para firebase.js e substitua os valores pelos dados
 // do seu app Web no Firebase Console.
@@ -16,5 +17,17 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+function initializeFirebaseAuth(firebaseApp) {
+  try {
+    return initializeAuth(firebaseApp, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } catch (error) {
+    // Fast Refresh can evaluate this module again while Auth is already initialized.
+    if (error?.code === 'auth/already-initialized') return getAuth(firebaseApp);
+    throw error;
+  }
+}
+
+export const auth = initializeFirebaseAuth(app);
 export const db = getFirestore(app);
