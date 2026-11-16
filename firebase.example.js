@@ -2,6 +2,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, getReactNativePersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Copie este arquivo para firebase.js e substitua os valores pelos dados
 // do seu app Web no Firebase Console.
@@ -18,6 +19,9 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 function initializeFirebaseAuth(firebaseApp) {
+  // getReactNativePersistence is only available in the native Firebase Auth bundle.
+  if (Platform.OS === 'web') return getAuth(firebaseApp);
+
   try {
     return initializeAuth(firebaseApp, {
       persistence: getReactNativePersistence(AsyncStorage),

@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { auth, db } from "../firebase";
+import { useMemo } from 'react';
 
 const SUBJECTS = [
   'Português', 'Literatura', 'Redação', 'Matemática', 'História', 'Geografia',
@@ -8,10 +8,10 @@ const SUBJECTS = [
   'Filosofia', 'Sociologia', 'Arte', 'Educação Física', 'Outra',
 ];
 
-function Field({ label, value, onChangeText, placeholder, multiline, keyboardType, maxLength }) {
+function Field({ label, value, onChangeText, placeholder, multiline, keyboardType, maxLength, styles, theme }) {
   return <View style={styles.field}>
     <Text style={styles.label}>{label}</Text>
-    <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#A7AFBC"
+    <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={theme.placeholder}
       multiline={multiline} keyboardType={keyboardType || 'default'} maxLength={maxLength}
       textAlignVertical={multiline ? 'top' : 'center'} style={[styles.input, multiline && styles.multiline]} />
   </View>;
@@ -24,7 +24,8 @@ function validDate(value) {
   return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
 }
 
-export default function Cadastrar({ activity, initialDate, role, onSave, onCancel }) {
+export default function Cadastrar({ activity, initialDate, role, onSave, onCancel, theme }) {
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [form, setForm] = useState(() => ({
     title: activity ? activity.title : '',
     subject: activity && SUBJECTS.includes(activity.subject) ? activity.subject : '',
@@ -57,7 +58,7 @@ export default function Cadastrar({ activity, initialDate, role, onSave, onCance
     <Text style={styles.title}>{activity ? 'Editar atividade' : 'Nova atividade'}</Text>
     <Text style={styles.intro}>{role === 'professor' ? 'Esta atividade ficará disponível para todos os usuários.' : 'Esta atividade ficará visível somente para você.'}</Text>
     <View style={styles.card}>
-      <Field label="Nome da atividade *" value={form.title} onChangeText={(v) => change('title', v)} placeholder="Ex.: Revisar matemática" maxLength={80} />
+      <Field styles={styles} theme={theme} label="Nome da atividade *" value={form.title} onChangeText={(v) => change('title', v)} placeholder="Ex.: Revisar matemática" maxLength={80} />
 
       <View style={styles.field}>
         <Text style={styles.label}>Matéria *</Text>
@@ -72,14 +73,14 @@ export default function Cadastrar({ activity, initialDate, role, onSave, onCance
         </View>
       </View>
 
-      <Field label="Descrição" value={form.description} onChangeText={(v) => change('description', v)} placeholder="O que você vai estudar?" multiline maxLength={300} />
+      <Field styles={styles} theme={theme} label="Descrição" value={form.description} onChangeText={(v) => change('description', v)} placeholder="O que você vai estudar?" multiline maxLength={300} />
       <View style={styles.row}>
-        <View style={styles.column}><Field label="Data *" value={form.date} onChangeText={(v) => change('date', v)} placeholder="AAAA-MM-DD" maxLength={10} /></View>
-        <View style={styles.column}><Field label="Horário" value={form.time} onChangeText={(v) => change('time', v)} placeholder="09:00" maxLength={5} /></View>
+        <View style={styles.column}><Field styles={styles} theme={theme} label="Data *" value={form.date} onChangeText={(v) => change('date', v)} placeholder="AAAA-MM-DD" maxLength={10} /></View>
+        <View style={styles.column}><Field styles={styles} theme={theme} label="Horário" value={form.time} onChangeText={(v) => change('time', v)} placeholder="09:00" maxLength={5} /></View>
       </View>
       {role === 'professor'
         ? <Text style={styles.gradeHint}>Cada estudante registra sua própria nota na tela de notas.</Text>
-        : <Field label="Nota (0 a 10)" value={form.grade} onChangeText={(v) => change('grade', v)} placeholder="Adicione quando tiver um resultado" keyboardType="decimal-pad" maxLength={5} />}
+        : <Field styles={styles} theme={theme} label="Nota (0 a 10)" value={form.grade} onChangeText={(v) => change('grade', v)} placeholder="Adicione quando tiver um resultado" keyboardType="decimal-pad" maxLength={5} />}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Pressable onPress={submit} style={styles.save}><Text style={styles.saveText}>{activity ? 'Salvar alterações' : 'Adicionar atividade'}</Text></Pressable>
       <Pressable onPress={onCancel} style={styles.cancel}><Text style={styles.muted}>Cancelar</Text></Pressable>
@@ -87,32 +88,34 @@ export default function Cadastrar({ activity, initialDate, role, onSave, onCance
   </ScrollView>;
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme) {
+  return StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 22, paddingTop: 20, paddingBottom: 28 },
   back: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginBottom: 22 },
-  backArrow: { color: '#17243C', fontSize: 27, marginRight: 6 },
-  muted: { color: '#7D8798', fontSize: 13, fontWeight: '600' },
-  kicker: { color: '#27A989', fontSize: 10, fontWeight: '800', letterSpacing: 1.3, marginBottom: 6 },
-  title: { color: '#17243C', fontSize: 27, fontWeight: '800' },
-  intro: { color: '#7D8798', fontSize: 13, lineHeight: 19, marginTop: 5, marginBottom: 18 },
-  card: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E7ECF2', borderRadius: 19, padding: 16 },
+  backArrow: { color: theme.text, fontSize: 27, marginRight: 6 },
+  muted: { color: theme.muted, fontSize: 13, fontWeight: '600' },
+  kicker: { color: theme.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1.3, marginBottom: 6 },
+  title: { color: theme.text, fontSize: 27, fontWeight: '800' },
+  intro: { color: theme.muted, fontSize: 13, lineHeight: 19, marginTop: 5, marginBottom: 18 },
+  card: { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 19, padding: 16 },
   field: { marginBottom: 13 },
-  label: { color: '#17243C', fontSize: 12, fontWeight: '700', marginBottom: 6 },
-  hint: { color: '#7D8798', fontSize: 10, marginBottom: 8 },
-  input: { minHeight: 44, borderRadius: 10, borderWidth: 1, borderColor: '#E7ECF2', paddingHorizontal: 11, color: '#17243C', fontSize: 13, backgroundColor: '#FCFDFE' },
+  label: { color: theme.text, fontSize: 12, fontWeight: '700', marginBottom: 6 },
+  hint: { color: theme.muted, fontSize: 10, marginBottom: 8 },
+  input: { minHeight: 44, borderRadius: 10, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 11, color: theme.text, fontSize: 13, backgroundColor: theme.surfaceSoft },
   multiline: { minHeight: 85, paddingTop: 11 },
-  subjectBox: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, padding: 10, borderWidth: 1, borderColor: '#E7ECF2', borderRadius: 12, backgroundColor: '#FCFDFE' },
-  subjectOption: { borderRadius: 9, borderWidth: 1, borderColor: '#E7ECF2', paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#FFFFFF' },
-  subjectOptionSelected: { borderColor: '#35C7A4', backgroundColor: '#E8F8F3' },
-  subjectText: { color: '#667286', fontSize: 11, fontWeight: '600' },
-  subjectTextSelected: { color: '#147C65', fontWeight: '800' },
+  subjectBox: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, padding: 10, borderWidth: 1, borderColor: theme.border, borderRadius: 12, backgroundColor: theme.surfaceSoft },
+  subjectOption: { borderRadius: 9, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: theme.surface },
+  subjectOptionSelected: { borderColor: theme.accentBorder, backgroundColor: theme.accentSurface },
+  subjectText: { color: theme.neutralText, fontSize: 11, fontWeight: '600' },
+  subjectTextSelected: { color: theme.accentStrong, fontWeight: '800' },
   row: { flexDirection: 'row', gap: 10 },
   column: { flex: 1 },
-  gradeHint: { color: '#7D8798', fontSize: 11, lineHeight: 16, marginBottom: 13 },
-  error: { color: '#C94D5B', fontSize: 12, marginBottom: 10 },
-  save: { minHeight: 47, backgroundColor: '#35C7A4', borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginTop: 3 },
-  saveText: { color: '#10283A', fontSize: 13, fontWeight: '800' },
+  gradeHint: { color: theme.muted, fontSize: 11, lineHeight: 16, marginBottom: 13 },
+  error: { color: theme.danger, fontSize: 12, marginBottom: 10 },
+  save: { minHeight: 47, backgroundColor: theme.accentBorder, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginTop: 3 },
+  saveText: { color: theme.accentText, fontSize: 13, fontWeight: '800' },
   cancel: { alignItems: 'center', padding: 12 },
-});
+  });
+}
 

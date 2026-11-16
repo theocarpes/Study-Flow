@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { auth, db } from "../firebase";
+import { useMemo } from 'react';
 
 const SUBJECTS = [
   'Português', 'Literatura', 'Redação', 'Matemática', 'História', 'Geografia',
@@ -13,7 +13,7 @@ const dateLabel = (value) => {
   return new Date(y, m - 1, d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-function ActivityCard({ activity, onToggleComplete, onEdit, onDelete, onSaveGrade }) {
+function ActivityCard({ activity, onToggleComplete, onEdit, onDelete, onSaveGrade, styles, theme }) {
   const [confirm, setConfirm] = useState(false);
   const [gradeMode, setGradeMode] = useState(false);
   const [gradeDraft, setGradeDraft] = useState(activity.grade === null || activity.grade === undefined ? '' : String(activity.grade));
@@ -44,7 +44,7 @@ function ActivityCard({ activity, onToggleComplete, onEdit, onDelete, onSaveGrad
 
       {activity.canRecordGrade ? (
         gradeMode ? <View style={styles.gradeEditor}>
-          <TextInput value={gradeDraft} onChangeText={(value) => { setGradeDraft(value); setGradeError(''); }} keyboardType="decimal-pad" placeholder="Nota de 0 a 10" placeholderTextColor="#A7AFBC" style={styles.gradeInput} />
+          <TextInput value={gradeDraft} onChangeText={(value) => { setGradeDraft(value); setGradeError(''); }} keyboardType="decimal-pad" placeholder="Nota de 0 a 10" placeholderTextColor={theme.placeholder} style={styles.gradeInput} />
           <Pressable onPress={submitGrade} style={styles.gradeSave}><Text style={styles.gradeSaveText}>Salvar nota</Text></Pressable>
           <Pressable onPress={() => { setGradeMode(false); setGradeError(''); }} style={styles.gradeCancel}><Text style={styles.meta}>Cancelar</Text></Pressable>
           {gradeError ? <Text style={styles.gradeError}>{gradeError}</Text> : null}
@@ -67,7 +67,7 @@ function ActivityCard({ activity, onToggleComplete, onEdit, onDelete, onSaveGrad
   </View>;
 }
 
-function SubjectSection({ subject, activities, onToggleComplete, onEdit, onDelete, onSaveGrade }) {
+function SubjectSection({ subject, activities, onToggleComplete, onEdit, onDelete, onSaveGrade, styles, theme }) {
   const graded = activities.filter((a) => a.grade !== null && a.grade !== undefined && Number.isFinite(Number(a.grade)));
   const average = graded.length
     ? (graded.reduce((sum, a) => sum + Number(a.grade), 0) / graded.length).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -83,12 +83,13 @@ function SubjectSection({ subject, activities, onToggleComplete, onEdit, onDelet
       <Text style={styles.subjectAverage}>Média da matéria: {average}</Text>
     </View>
     {activities.map((activity) => (
-      <ActivityCard key={activity.id} activity={activity} onToggleComplete={onToggleComplete} onEdit={onEdit} onDelete={onDelete} onSaveGrade={onSaveGrade} />
+      <ActivityCard key={activity.id} activity={activity} onToggleComplete={onToggleComplete} onEdit={onEdit} onDelete={onDelete} onSaveGrade={onSaveGrade} styles={styles} theme={theme} />
     ))}
   </View>;
 }
 
-export default function Notas({ activities, onCreate, onEdit, onDelete, onToggleComplete, onSaveGrade }) {
+export default function Notas({ activities, onCreate, onEdit, onDelete, onToggleComplete, onSaveGrade, theme }) {
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [filter, setFilter] = useState('concluidas');
   const graded = activities.filter((a) => a.grade !== null && a.grade !== undefined && Number.isFinite(Number(a.grade)));
   const average = graded.length
@@ -119,7 +120,7 @@ export default function Notas({ activities, onCreate, onEdit, onDelete, onToggle
     <View style={styles.listHead}><Text style={styles.section}>{filter === 'todas' ? 'Todas as matérias' : 'Matérias concluídas'}</Text><Text style={styles.meta}>{shown.length} atividades</Text></View>
     {shown.length ? presentSubjects.map((subject) => {
       const subjectActivities = shown.filter((activity) => (activity.subject || 'Sem matéria') === subject);
-      return <SubjectSection key={subject} subject={subject} activities={subjectActivities} onToggleComplete={onToggleComplete} onEdit={onEdit} onDelete={onDelete} onSaveGrade={onSaveGrade} />;
+      return <SubjectSection key={subject} subject={subject} activities={subjectActivities} onToggleComplete={onToggleComplete} onEdit={onEdit} onDelete={onDelete} onSaveGrade={onSaveGrade} styles={styles} theme={theme} />;
     }) : (
       <View style={styles.empty}>
         <Text style={styles.emptyTitle}>{filter === 'todas' ? 'Sua lista está vazia' : 'Suas conquistas começam aqui'}</Text>
@@ -130,59 +131,61 @@ export default function Notas({ activities, onCreate, onEdit, onDelete, onToggle
   </ScrollView>;
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme) {
+  return StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 22, paddingTop: 23, paddingBottom: 28 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  kicker: { color: '#27A989', fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 5 },
-  title: { color: '#17243C', fontSize: 23, fontWeight: '800' },
-  icon: { color: '#8978EA', backgroundColor: '#F0EDFF', borderRadius: 13, overflow: 'hidden', fontSize: 22, padding: 9 },
-  intro: { color: '#7D8798', fontSize: 12, lineHeight: 18, marginTop: 7, marginBottom: 15 },
+  kicker: { color: theme.accent, fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 5 },
+  title: { color: theme.text, fontSize: 23, fontWeight: '800' },
+  icon: { color: theme.purple, backgroundColor: theme.purpleSurface, borderRadius: 13, overflow: 'hidden', fontSize: 22, padding: 9 },
+  intro: { color: theme.muted, fontSize: 12, lineHeight: 18, marginTop: 7, marginBottom: 15 },
   stats: { flexDirection: 'row', gap: 8, marginBottom: 15 },
-  stat: { flex: 1, minHeight: 73, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E7ECF2', borderRadius: 14 },
-  statNum: { color: '#17243C', fontSize: 20, fontWeight: '800' },
-  average: { color: '#8978EA', fontSize: 20, fontWeight: '800' },
-  statLabel: { color: '#7D8798', fontSize: 9, marginTop: 3 },
-  filters: { flexDirection: 'row', backgroundColor: '#E9EDF3', borderRadius: 11, padding: 4, marginBottom: 18 },
+  stat: { flex: 1, minHeight: 73, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 14 },
+  statNum: { color: theme.text, fontSize: 20, fontWeight: '800' },
+  average: { color: theme.purple, fontSize: 20, fontWeight: '800' },
+  statLabel: { color: theme.muted, fontSize: 9, marginTop: 3 },
+  filters: { flexDirection: 'row', backgroundColor: theme.surfaceMuted, borderRadius: 11, padding: 4, marginBottom: 18 },
   filter: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 34, borderRadius: 8 },
-  activeFilter: { backgroundColor: '#FFFFFF' },
-  filterText: { color: '#17243C', fontSize: 11, fontWeight: '700' },
+  activeFilter: { backgroundColor: theme.surface },
+  filterText: { color: theme.text, fontSize: 11, fontWeight: '700' },
   listHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  section: { color: '#17243C', fontSize: 15, fontWeight: '800' },
+  section: { color: theme.text, fontSize: 15, fontWeight: '800' },
   subjectSection: { marginBottom: 8 },
-  subjectHeader: { backgroundColor: '#E8F8F3', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8 },
+  subjectHeader: { backgroundColor: theme.accentSurface, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8 },
   subjectTitleRow: { flexDirection: 'row', alignItems: 'center' },
-  subjectMark: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#27A989', marginRight: 8 },
-  subjectTitle: { flex: 1, color: '#17243C', fontSize: 13, fontWeight: '800' },
-  subjectCount: { color: '#147C65', fontSize: 10, fontWeight: '800' },
-  subjectAverage: { color: '#527267', fontSize: 10, marginTop: 5, marginLeft: 15 },
-  card: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E7ECF2', borderRadius: 15, padding: 12, marginBottom: 8 },
-  mark: { width: 4, borderRadius: 3, backgroundColor: '#E9B05B', marginRight: 10 },
-  doneMark: { backgroundColor: '#35C7A4' },
+  subjectMark: { width: 7, height: 7, borderRadius: 4, backgroundColor: theme.accent, marginRight: 8 },
+  subjectTitle: { flex: 1, color: theme.text, fontSize: 13, fontWeight: '800' },
+  subjectCount: { color: theme.accentStrong, fontSize: 10, fontWeight: '800' },
+  subjectAverage: { color: theme.neutralStrong, fontSize: 10, marginTop: 5, marginLeft: 15 },
+  card: { flexDirection: 'row', backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 15, padding: 12, marginBottom: 8 },
+  mark: { width: 4, borderRadius: 3, backgroundColor: theme.warning, marginRight: 10 },
+  doneMark: { backgroundColor: theme.accentBorder },
   cardBody: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  activityTitle: { flex: 1, color: '#17243C', fontSize: 12, lineHeight: 17, fontWeight: '800', marginRight: 7 },
+  activityTitle: { flex: 1, color: theme.text, fontSize: 12, lineHeight: 17, fontWeight: '800', marginRight: 7 },
   grade: { borderRadius: 7, overflow: 'hidden', paddingHorizontal: 6, paddingVertical: 4, fontSize: 9, fontWeight: '800' },
-  hasGrade: { color: '#8978EA', backgroundColor: '#F0EDFF' },
-  noGrade: { color: '#7D8798', backgroundColor: '#F2F4F7' },
-  meta: { color: '#7D8798', fontSize: 10, marginTop: 5 },
-  shared: { color: '#8978EA', fontSize: 9, fontWeight: '800', marginTop: 5 },
-  description: { color: '#17243C', fontSize: 11, marginTop: 6, lineHeight: 16 },
+  hasGrade: { color: theme.purple, backgroundColor: theme.purpleSurface },
+  noGrade: { color: theme.muted, backgroundColor: theme.neutralSurface },
+  meta: { color: theme.muted, fontSize: 10, marginTop: 5 },
+  shared: { color: theme.purple, fontSize: 9, fontWeight: '800', marginTop: 5 },
+  description: { color: theme.text, fontSize: 11, marginTop: 6, lineHeight: 16 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
-  complete: { color: '#27A989', fontSize: 10, fontWeight: '800' },
-  edit: { color: '#8978EA', fontSize: 10, fontWeight: '800' },
-  delete: { color: '#C94D5B', fontSize: 10, fontWeight: '700' },
-  gradeAction: { alignSelf: 'flex-start', backgroundColor: '#F0EDFF', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 7, marginTop: 8 },
-  gradeActionText: { color: '#6E5CC6', fontSize: 10, fontWeight: '800' },
+  complete: { color: theme.accent, fontSize: 10, fontWeight: '800' },
+  edit: { color: theme.purple, fontSize: 10, fontWeight: '800' },
+  delete: { color: theme.danger, fontSize: 10, fontWeight: '700' },
+  gradeAction: { alignSelf: 'flex-start', backgroundColor: theme.purpleSurface, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 7, marginTop: 8 },
+  gradeActionText: { color: theme.purpleStrong, fontSize: 10, fontWeight: '800' },
   gradeEditor: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7, marginTop: 8 },
-  gradeInput: { width: 105, height: 35, borderWidth: 1, borderColor: '#E7ECF2', borderRadius: 8, paddingHorizontal: 9, color: '#17243C', fontSize: 11 },
-  gradeSave: { backgroundColor: '#35C7A4', borderRadius: 8, paddingHorizontal: 9, paddingVertical: 9 },
-  gradeSaveText: { color: '#10283A', fontSize: 10, fontWeight: '800' },
+  gradeInput: { width: 105, height: 35, borderWidth: 1, borderColor: theme.border, borderRadius: 8, paddingHorizontal: 9, color: theme.text, backgroundColor: theme.surfaceSoft, fontSize: 11 },
+  gradeSave: { backgroundColor: theme.accentBorder, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 9 },
+  gradeSaveText: { color: theme.accentText, fontSize: 10, fontWeight: '800' },
   gradeCancel: { padding: 5 },
-  gradeError: { width: '100%', color: '#C94D5B', fontSize: 10 },
-  empty: { alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E7ECF2', borderRadius: 16, padding: 21 },
-  emptyTitle: { color: '#17243C', fontSize: 13, fontWeight: '800' },
-  newButton: { backgroundColor: '#E8F8F3', borderRadius: 10, paddingHorizontal: 13, paddingVertical: 10, marginTop: 13 },
-  newText: { color: '#17243C', fontSize: 11, fontWeight: '800' },
-});
+  gradeError: { width: '100%', color: theme.danger, fontSize: 10 },
+  empty: { alignItems: 'center', backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, padding: 21 },
+  emptyTitle: { color: theme.text, fontSize: 13, fontWeight: '800' },
+  newButton: { backgroundColor: theme.accentSurface, borderRadius: 10, paddingHorizontal: 13, paddingVertical: 10, marginTop: 13 },
+  newText: { color: theme.text, fontSize: 11, fontWeight: '800' },
+  });
+}
 

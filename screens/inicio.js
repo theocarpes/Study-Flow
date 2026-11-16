@@ -1,5 +1,5 @@
 ﻿import { ScrollView, StyleSheet, Text, Pressable, View } from 'react-native';
-import { auth, db } from "../firebase";
+import { useMemo } from 'react';
 
 const keyFor = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const prettyDate = (value, part) => {
@@ -7,7 +7,8 @@ const prettyDate = (value, part) => {
   return new Date(y, m - 1, d).toLocaleDateString('pt-BR', part === 'day' ? { day: '2-digit' } : { month: 'short' }).replace('.', '');
 };
 
-export default function Inicio({ user, activities, onCreate, onEdit, onNavigate, onLogout }) {
+export default function Inicio({ user, activities, onCreate, onEdit, onNavigate, onLogout, theme, onToggleTheme }) {
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const today = keyFor(new Date());
   const done = activities.filter((a) => a.completed).length;
   const upcoming = activities.filter((a) => !a.completed && a.date >= today)
@@ -19,7 +20,17 @@ export default function Inicio({ user, activities, onCreate, onEdit, onNavigate,
       <View style={styles.brand}>
         <View style={styles.logo}><Text style={styles.logoText}>SF</Text></View>
         <View style={styles.brandCopy}><Text style={styles.brandText}>STUDY FLOW</Text><Text style={styles.accountText}>{user.name} · {roleLabel}</Text></View>
-        <Pressable onPress={onLogout} style={styles.logout}><Text style={styles.logoutText}>Sair</Text></Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={theme.mode === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
+            onPress={onToggleTheme}
+            style={styles.themeToggle}
+          >
+            <Text style={styles.themeToggleText}>{theme.mode === 'dark' ? '☀' : '☾'}</Text>
+          </Pressable>
+          <Pressable onPress={onLogout} style={styles.logout}><Text style={styles.logoutText}>Sair</Text></Pressable>
+        </View>
       </View>
       <Text style={styles.kicker}>SEU ESPAÇO DE ESTUDOS</Text>
       <Text style={styles.title}>Olá, {user.name.split(' ')[0]} 👋</Text>
@@ -55,44 +66,49 @@ export default function Inicio({ user, activities, onCreate, onEdit, onNavigate,
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(theme) {
+  return StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 22, paddingTop: 28, paddingBottom: 26 },
   brand: { flexDirection: 'row', alignItems: 'center', marginBottom: 26 },
-  logo: { width: 32, height: 32, borderRadius: 11, backgroundColor: '#35C7A4', alignItems: 'center', justifyContent: 'center' },
-  logoText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  logo: { width: 32, height: 32, borderRadius: 11, backgroundColor: theme.accentBorder, alignItems: 'center', justifyContent: 'center' },
+  logoText: { color: theme.accentText, fontSize: 12, fontWeight: '800' },
   brandCopy: { flex: 1, marginLeft: 10 },
-  brandText: { color: '#17243C', fontSize: 12, fontWeight: '800', letterSpacing: 2 },
-  accountText: { color: '#7D8798', fontSize: 9, marginTop: 3 },
-  logout: { paddingHorizontal: 11, paddingVertical: 7, backgroundColor: '#FFFFFF', borderRadius: 9, borderWidth: 1, borderColor: '#E7ECF2' },
-  logoutText: { color: '#7D8798', fontSize: 10, fontWeight: '700' },
-  kicker: { color: '#27A989', fontSize: 10, fontWeight: '800', letterSpacing: 1.4, marginBottom: 7 },
-  title: { color: '#17243C', fontSize: 26, fontWeight: '800' },
-  sub: { color: '#7D8798', fontSize: 13, lineHeight: 20, marginTop: 6, marginBottom: 20 },
-  hero: { backgroundColor: '#202E4A', borderRadius: 21, padding: 20, marginBottom: 24 },
-  pill: { alignSelf: 'flex-start', backgroundColor: '#314260', color: '#D7E3F5', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
-  heroTitle: { color: '#FFFFFF', fontSize: 21, fontWeight: '800', marginTop: 14 },
-  heroCopy: { color: '#D1DBE8', fontSize: 12, lineHeight: 19, marginTop: 5 },
-  primary: { alignSelf: 'flex-start', backgroundColor: '#35C7A4', borderRadius: 11, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
-  primaryText: { color: '#10283A', fontSize: 11, fontWeight: '800' },
-  section: { color: '#17243C', fontSize: 16, fontWeight: '800' },
+  brandText: { color: theme.text, fontSize: 12, fontWeight: '800', letterSpacing: 2 },
+  accountText: { color: theme.muted, fontSize: 9, marginTop: 3 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  themeToggle: { width: 34, height: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.surface, borderRadius: 9, borderWidth: 1, borderColor: theme.border },
+  themeToggleText: { color: theme.text, fontSize: 17, fontWeight: '700' },
+  logout: { paddingHorizontal: 11, paddingVertical: 7, backgroundColor: theme.surface, borderRadius: 9, borderWidth: 1, borderColor: theme.border },
+  logoutText: { color: theme.muted, fontSize: 10, fontWeight: '700' },
+  kicker: { color: theme.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1.4, marginBottom: 7 },
+  title: { color: theme.text, fontSize: 26, fontWeight: '800' },
+  sub: { color: theme.muted, fontSize: 13, lineHeight: 20, marginTop: 6, marginBottom: 20 },
+  hero: { backgroundColor: theme.hero, borderRadius: 21, padding: 20, marginBottom: 24 },
+  pill: { alignSelf: 'flex-start', backgroundColor: theme.heroPill, color: theme.heroPillText, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  heroTitle: { color: theme.heroText, fontSize: 21, fontWeight: '800', marginTop: 14 },
+  heroCopy: { color: theme.heroCopy, fontSize: 12, lineHeight: 19, marginTop: 5 },
+  primary: { alignSelf: 'flex-start', backgroundColor: theme.accentBorder, borderRadius: 11, paddingHorizontal: 14, paddingVertical: 11, marginTop: 16 },
+  primaryText: { color: theme.accentText, fontSize: 11, fontWeight: '800' },
+  section: { color: theme.text, fontSize: 16, fontWeight: '800' },
   actions: { flexDirection: 'row', gap: 11, marginTop: 12, marginBottom: 23 },
-  action: { flex: 1, minHeight: 115, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E7ECF2', borderRadius: 16, padding: 14 },
-  actionIcon: { color: '#27A989', fontSize: 20, marginBottom: 9 },
-  purple: { color: '#8978EA' },
-  actionTitle: { color: '#17243C', fontSize: 13, fontWeight: '800' },
-  actionSub: { color: '#7D8798', fontSize: 10, marginTop: 4, lineHeight: 15 },
+  action: { flex: 1, minHeight: 115, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 16, padding: 14 },
+  actionIcon: { color: theme.accent, fontSize: 20, marginBottom: 9 },
+  purple: { color: theme.purple },
+  actionTitle: { color: theme.text, fontSize: 13, fontWeight: '800' },
+  actionSub: { color: theme.muted, fontSize: 10, marginTop: 4, lineHeight: 15 },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 },
-  link: { color: '#27A989', fontSize: 11, fontWeight: '800' },
-  empty: { alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E7ECF2', padding: 20 },
-  emptyTitle: { color: '#17243C', fontSize: 13, fontWeight: '800' },
-  item: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#E7ECF2', padding: 11, marginBottom: 8 },
-  date: { width: 45, height: 46, borderRadius: 11, backgroundColor: '#E8F8F3', alignItems: 'center', justifyContent: 'center' },
-  dateDay: { color: '#17243C', fontSize: 15, fontWeight: '800' },
-  dateMonth: { color: '#7D8798', fontSize: 9, textTransform: 'uppercase' },
+  link: { color: theme.accent, fontSize: 11, fontWeight: '800' },
+  empty: { alignItems: 'center', backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, padding: 20 },
+  emptyTitle: { color: theme.text, fontSize: 13, fontWeight: '800' },
+  item: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.surface, borderRadius: 14, borderWidth: 1, borderColor: theme.border, padding: 11, marginBottom: 8 },
+  date: { width: 45, height: 46, borderRadius: 11, backgroundColor: theme.accentSurface, alignItems: 'center', justifyContent: 'center' },
+  dateDay: { color: theme.text, fontSize: 15, fontWeight: '800' },
+  dateMonth: { color: theme.muted, fontSize: 9, textTransform: 'uppercase' },
   itemInfo: { flex: 1, marginLeft: 11 },
-  itemTitle: { color: '#17243C', fontSize: 12, fontWeight: '700' },
-  sharedLabel: { color: '#8978EA', fontSize: 8, fontWeight: '800', marginLeft: 6 },
-  arrow: { color: '#7D8798', fontSize: 21, paddingHorizontal: 5 },
-});
+  itemTitle: { color: theme.text, fontSize: 12, fontWeight: '700' },
+  sharedLabel: { color: theme.purple, fontSize: 8, fontWeight: '800', marginLeft: 6 },
+  arrow: { color: theme.muted, fontSize: 21, paddingHorizontal: 5 },
+  });
+}
 

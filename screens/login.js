@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 function authErrorMessage(error) {
@@ -15,7 +15,8 @@ function authErrorMessage(error) {
   return messages[error?.code] || error?.message || 'Não foi possível concluir. Tente novamente.';
 }
 
-export default function Login({ onLogin, onRegister, error }) {
+export default function Login({ onLogin, onRegister, error, theme }) {
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -63,17 +64,17 @@ export default function Login({ onLogin, onRegister, error }) {
     <View style={styles.form}>
       {mode === 'register' ? <>
         <Text style={styles.label}>Nome</Text>
-        <TextInput value={name} onChangeText={setName} placeholder="Seu nome" placeholderTextColor="#A7AFBC" style={styles.input} autoCapitalize="words" />
+        <TextInput value={name} onChangeText={setName} placeholder="Seu nome" placeholderTextColor={theme.placeholder} style={styles.input} autoCapitalize="words" />
       </> : null}
 
       <Text style={styles.label}>E-mail</Text>
-      <TextInput value={email} onChangeText={setEmail} placeholder="voce@email.com" placeholderTextColor="#A7AFBC" style={styles.input} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+      <TextInput value={email} onChangeText={setEmail} placeholder="voce@email.com" placeholderTextColor={theme.placeholder} style={styles.input} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
       <Text style={styles.label}>Senha</Text>
-      <TextInput value={password} onChangeText={setPassword} placeholder="Mínimo de 6 caracteres" placeholderTextColor="#A7AFBC" style={styles.input} secureTextEntry />
+      <TextInput value={password} onChangeText={setPassword} placeholder="Mínimo de 6 caracteres" placeholderTextColor={theme.placeholder} style={styles.input} secureTextEntry />
 
       {mode === 'register' ? <>
         <Text style={styles.label}>Confirme a senha</Text>
-        <TextInput value={confirmation} onChangeText={setConfirmation} placeholder="Digite a senha novamente" placeholderTextColor="#A7AFBC" style={styles.input} secureTextEntry />
+        <TextInput value={confirmation} onChangeText={setConfirmation} placeholder="Digite a senha novamente" placeholderTextColor={theme.placeholder} style={styles.input} secureTextEntry />
       </> : null}
 
       {formError || error ? <Text style={styles.error}>{formError || error}</Text> : null}
@@ -88,25 +89,27 @@ export default function Login({ onLogin, onRegister, error }) {
   </ScrollView>;
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#F5F7FA' },
+function createStyles(theme) {
+  return StyleSheet.create({
+  scroll: { flex: 1, backgroundColor: theme.background },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 25, paddingTop: 35, paddingBottom: 35 },
-  logo: { width: 52, height: 52, borderRadius: 17, backgroundColor: '#35C7A4', alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
-  logoText: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
-  brand: { color: '#17243C', textAlign: 'center', fontSize: 11, fontWeight: '800', letterSpacing: 2, marginTop: 10 },
-  title: { color: '#17243C', fontSize: 25, fontWeight: '800', textAlign: 'center', marginTop: 24 },
-  subtitle: { color: '#7D8798', fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 6, marginBottom: 20 },
-  modeSwitch: { flexDirection: 'row', backgroundColor: '#E9EDF3', borderRadius: 12, padding: 4, marginBottom: 17 },
+  logo: { width: 52, height: 52, borderRadius: 17, backgroundColor: theme.accentBorder, alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
+  logoText: { color: theme.accentText, fontSize: 18, fontWeight: '900' },
+  brand: { color: theme.text, textAlign: 'center', fontSize: 11, fontWeight: '800', letterSpacing: 2, marginTop: 10 },
+  title: { color: theme.text, fontSize: 25, fontWeight: '800', textAlign: 'center', marginTop: 24 },
+  subtitle: { color: theme.muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 6, marginBottom: 20 },
+  modeSwitch: { flexDirection: 'row', backgroundColor: theme.surfaceMuted, borderRadius: 12, padding: 4, marginBottom: 17 },
   modeButton: { flex: 1, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
-  modeActive: { backgroundColor: '#FFFFFF' },
-  modeText: { color: '#7D8798', fontSize: 12, fontWeight: '700' },
-  modeTextActive: { color: '#17243C' },
-  form: { backgroundColor: '#FFFFFF', borderRadius: 19, borderWidth: 1, borderColor: '#E7ECF2', padding: 17 },
-  label: { color: '#17243C', fontSize: 11, fontWeight: '700', marginBottom: 6, marginTop: 10 },
-  input: { minHeight: 45, borderRadius: 10, borderWidth: 1, borderColor: '#E7ECF2', paddingHorizontal: 11, color: '#17243C', fontSize: 13, backgroundColor: '#FCFDFE' },
-  error: { color: '#C94D5B', fontSize: 11, marginTop: 10 },
-  submit: { minHeight: 47, backgroundColor: '#35C7A4', borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  modeActive: { backgroundColor: theme.surface },
+  modeText: { color: theme.muted, fontSize: 12, fontWeight: '700' },
+  modeTextActive: { color: theme.text },
+  form: { backgroundColor: theme.surface, borderRadius: 19, borderWidth: 1, borderColor: theme.border, padding: 17 },
+  label: { color: theme.text, fontSize: 11, fontWeight: '700', marginBottom: 6, marginTop: 10 },
+  input: { minHeight: 45, borderRadius: 10, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 11, color: theme.text, fontSize: 13, backgroundColor: theme.surfaceSoft },
+  error: { color: theme.danger, fontSize: 11, marginTop: 10 },
+  submit: { minHeight: 47, backgroundColor: theme.accentBorder, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   submitDisabled: { opacity: 0.65 },
-  submitText: { color: '#10283A', fontSize: 13, fontWeight: '800' },
-  footnote: { color: '#8993A2', fontSize: 10, lineHeight: 15, textAlign: 'center', marginTop: 16 },
-});
+  submitText: { color: theme.accentText, fontSize: 13, fontWeight: '800' },
+  footnote: { color: theme.subtleText, fontSize: 10, lineHeight: 15, textAlign: 'center', marginTop: 16 },
+  });
+}

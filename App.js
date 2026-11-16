@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -23,6 +23,7 @@ import Inicio from './screens/inicio';
 import Cadastrar from './screens/cadastrar';
 import Calendario from './screens/calendario';
 import Notas from './screens/notas';
+import { darkTheme, lightTheme } from './theme';
 
 const todayKey = () => {
   const d = new Date();
@@ -70,7 +71,11 @@ export default function App() {
   const [editing, setEditing] = useState(null);
   const [returnTo, setReturnTo] = useState('inicio');
   const [selectedDate, setSelectedDate] = useState(todayKey());
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const registering = useRef(false);
+  const theme = isDarkMode ? darkTheme : lightTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const toggleTheme = () => setIsDarkMode((current) => !current);
 
   useEffect(() => onAuthStateChanged(auth, async (firebaseUser) => {
     if (registering.current) {
@@ -303,14 +308,14 @@ export default function App() {
   };
 
   if (!authReady) {
-    return <View style={styles.loading}><StatusBar style="dark" /><ActivityIndicator size="large" color="#27A989" /><Text style={styles.loadingText}>Conectando ao Study Flow...</Text></View>;
+    return <View style={styles.loading}><StatusBar style={isDarkMode ? 'light' : 'dark'} /><ActivityIndicator size="large" color={theme.accent} /><Text style={styles.loadingText}>Conectando ao Study Flow...</Text></View>;
   }
 
   if (!user) {
     return (
       <View style={styles.app}>
-        <StatusBar style="dark" />
-        <Login onLogin={login} onRegister={register} error={authError} />
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        <Login onLogin={login} onRegister={register} error={authError} theme={theme} />
       </View>
     );
   }
@@ -330,13 +335,13 @@ export default function App() {
 
   return (
     <View style={styles.app}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       {dataError ? <View style={styles.errorBanner}><Text style={styles.errorText}>{dataError}</Text><Pressable onPress={() => setDataError('')}><Text style={styles.dismiss}>Fechar</Text></Pressable></View> : null}
       <View style={styles.screen}>
-        {screen === 'inicio' && <Inicio user={user} activities={visibleActivities} onCreate={() => create()} onEdit={edit} onNavigate={go} onLogout={logout} />}
-        {screen === 'cadastrar' && <Cadastrar activity={editing} initialDate={selectedDate} role={user.role} onSave={save} onCancel={finishForm} />}
-        {screen === 'calendario' && <Calendario activities={visibleActivities} selectedDate={selectedDate} onSelectDate={setSelectedDate} onCreate={create} onEdit={edit} onDelete={remove} />}
-        {screen === 'notas' && <Notas activities={visibleActivities} onCreate={() => create()} onEdit={edit} onDelete={remove} onToggleComplete={toggleComplete} onSaveGrade={saveGrade} />}
+        {screen === 'inicio' && <Inicio user={user} activities={visibleActivities} onCreate={() => create()} onEdit={edit} onNavigate={go} onLogout={logout} theme={theme} onToggleTheme={toggleTheme} />}
+        {screen === 'cadastrar' && <Cadastrar activity={editing} initialDate={selectedDate} role={user.role} onSave={save} onCancel={finishForm} theme={theme} />}
+        {screen === 'calendario' && <Calendario activities={visibleActivities} selectedDate={selectedDate} onSelectDate={setSelectedDate} onCreate={create} onEdit={edit} onDelete={remove} theme={theme} />}
+        {screen === 'notas' && <Notas activities={visibleActivities} onCreate={() => create()} onEdit={edit} onDelete={remove} onToggleComplete={toggleComplete} onSaveGrade={saveGrade} theme={theme} />}
       </View>
       <View style={styles.tabs}>
         {[['inicio', '⌂', 'Início'], ['calendario', '▦', 'Calendário'], ['notas', '✓', 'Notas']].map(([key, icon, label]) => (
@@ -354,17 +359,19 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  app: { flex: 1, backgroundColor: '#F5F7FA' },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F5F7FA' },
-  loadingText: { color: '#7D8798', fontSize: 12, marginTop: 12 },
+function createStyles(theme) {
+  return StyleSheet.create({
+  app: { flex: 1, backgroundColor: theme.background },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.background },
+  loadingText: { color: theme.muted, fontSize: 12, marginTop: 12 },
   screen: { flex: 1 },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF0F0', paddingHorizontal: 14, paddingVertical: 9 },
-  errorText: { flex: 1, color: '#A63845', fontSize: 11, lineHeight: 16 },
-  dismiss: { color: '#A63845', fontSize: 10, fontWeight: '800', paddingLeft: 10 },
-  tabs: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E7ECF2', paddingVertical: 9 },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.dangerSurface, paddingHorizontal: 14, paddingVertical: 9 },
+  errorText: { flex: 1, color: theme.dangerStrong, fontSize: 11, lineHeight: 16 },
+  dismiss: { color: theme.dangerStrong, fontSize: 10, fontWeight: '800', paddingLeft: 10 },
+  tabs: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: theme.surface, borderTopWidth: 1, borderTopColor: theme.border, paddingVertical: 9 },
   tab: { minWidth: 65, alignItems: 'center', paddingHorizontal: 5 },
-  tabIcon: { color: '#7D8798', fontSize: 20 },
-  tabLabel: { color: '#7D8798', fontSize: 10, fontWeight: '600', marginTop: 2 },
-  selected: { color: '#27A989' },
-});
+  tabIcon: { color: theme.muted, fontSize: 20 },
+  tabLabel: { color: theme.muted, fontSize: 10, fontWeight: '600', marginTop: 2 },
+  selected: { color: theme.accent },
+  });
+}
