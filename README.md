@@ -35,6 +35,7 @@ O aplicativo oferece telas para autenticação, visualização de atividades, ca
 - **RF-12 — Registrar conclusão:** permitir que cada usuário marque ou desmarque a conclusão de uma atividade. O progresso de atividades globais é individual.
 - **RF-13 — Registrar nota:** permitir que cada estudante registre uma nota de 0 a 10 nas próprias atividades e nas atividades globais, sem alterar a nota de outro usuário.
 - **RF-14 — Proteger dados por usuário:** restringir a leitura e a alteração de atividades privadas e resultados conforme as regras do Cloud Firestore.
+- **RF-15 — Alternar tema:** permitir alternar entre os temas claro e escuro pelo botão na tela inicial, aplicando a escolha às telas do aplicativo.
 
 ## Principais telas
 
@@ -44,7 +45,7 @@ Permite entrar com e-mail e senha ou criar uma conta. Os cadastros feitos pelo a
 
 ### Início — `screens/inicio.js`
 
-Mostra o nome e o perfil da pessoa conectada, um resumo das atividades e as próximas tarefas. A partir dela é possível abrir o calendário, as notas, cadastrar uma atividade ou sair da conta.
+Mostra o nome e o perfil da pessoa conectada, um resumo das atividades e as próximas tarefas. A partir dela é possível abrir o calendário, as notas, cadastrar uma atividade ou sair da conta. O botão com ícone de lua ou sol, ao lado de **Sair**, alterna entre os temas claro e escuro. A escolha vale durante o uso do app; ao reiniciar, ele começa no tema claro.
 
 ### Cadastro de atividade — `screens/cadastrar.js`
 
@@ -115,6 +116,7 @@ O aplicativo consulta as atividades globais e as atividades criadas pela pessoa 
 
 - React Native
 - Expo
+- Tema claro e escuro com paletas compartilhadas em `theme.js`
 - Firebase Authentication
 - Cloud Firestore
 
