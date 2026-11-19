@@ -112,6 +112,28 @@ O aplicativo consulta as atividades globais e as atividades criadas pela pessoa 
    npm start
    ```
 
+## APK para a entrega
+
+O APK desta versão está na raiz do projeto: [baixar StudyFlow.apk](./StudyFlow.apk). Ele foi gerado localmente com Gradle, sem usar EAS ou fazer login na Expo. O identificador Android do aplicativo é `com.theocarpeserdmann.studyflow`.
+
+Para gerar o APK novamente no Windows, instale o Node.js e o Android Studio. No SDK Manager do Android Studio, instale a plataforma Android 36, Build Tools 35.0.0, NDK 27.1.12297006 e CMake 3.22.1; aceite também as licenças do SDK. Configure antes o `firebase.js` conforme a seção anterior e execute os comandos na pasta do projeto. Se o Android Studio estiver no local padrão, configure as variáveis do SDK e do Java no PowerShell:
+
+```powershell
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
+$env:JAVA_HOME = "$env:ProgramFiles\Android\Android Studio\jbr"
+npm install
+npx expo prebuild --platform android --no-install
+Set-Location android
+.\gradlew.bat assembleRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease
+Set-Location ..
+Copy-Item android\app\build\outputs\apk\release\app-release.apk .\StudyFlow.apk -Force
+```
+
+O Gradle gera o arquivo em `android/app/build/outputs/apk/release/app-release.apk`; o último comando o copia para `StudyFlow.apk` na raiz. A pasta `android/` é gerada pelo Expo e está ignorada pelo Git, por isso o `prebuild` deve ser executado antes de compilar quando ela não existir.
+
+O APK entregue está assinado com uma chave de depuração, adequada para instalação e demonstração em um dispositivo Android. Para publicar na Play Store, é necessário configurar uma chave de assinatura própria.
+
 ## Tecnologias
 
 - React Native
